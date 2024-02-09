@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Eliot in England</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css"
+      crossorigin=""
+    />
+    <link
+      rel="icon"
+      href="/files/fullsize/archive-favicon.jpeg"
+      type="image/x-icon"
+    />
+    <style type="text/css">
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      ,
+      #map {
+        min-height: 90%;
+      }
+    </style>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Text&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"
+      crossorigin=""
+    ></script>
+    <script src="https://georgeeliotarchive.org/george-eliot-england/js/EliotEngland.js"></script>
+    <script src="https://georgeeliotarchive.org/george-eliot-england/js/EliotEnglandCities.js"></script>
+  </head>
+
+  <body>
+    <div
+      id="map"
+      style="font-size: 16px; font-family: 'Crimson Text'; height: 100%"
+    >
+      <div
+        id="info"
+        class="leaflet-bottom leaflet-left"
+        style="
+          pointer-events: auto;
+          position: sticky;
+          padding: 5px 5px 15px 5px;
+          width: 27.5%;
+          background-color: white;
+          border-radius: 10px;
+          margin: 100px 30px 30px 10px;
+          text-align: center;
+          border-style: solid;
+          border-color: #7f7f7f;
+          max-height: 550px;
+          overflow: auto;
+        "
+      >
+        <h3>George Eliot's England</h3>
+        Click on the circles to see information. <br />Zoom in to building-level
+        detail.
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      var map = L.map("map").setView([52, -1.5], 8);
+
+      var canvas = L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          subdomains: "abcd",
+          maxZoom: 19,
+          minZoom: 5,
+        }
+      );
+
+      var imagery = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          maxZoom: 19,
+          minZoom: 5,
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }
+      ).addTo(map);
+
+      var onEachFeature1880 = function (feature, layer) {
+        if (feature.properties) {
+          var prop = feature.properties;
+          // make a cool little html popup that can include properties from the .js file
+          var popup =
+            '<h4><p>George Eliot&#39;s 1880 honeymoon with John Cross, from May 6 to July 26, was to be her last journey to the Continent. They traveled to familiar tourist sites in France and Italy, revisiting many sites Eliot had visited before. The trip was presumably radically altered when Cross jumped from their hotel room in Venice into the Canale Grande, an event that has led to much speculation about his state of mind and his intentions. They took almost another month after they left Venice to slowly make their way home through Austria and Germany, stopping at a number of spas. Eliot only kept brief notes in her journals; Cross quotes many letters written during honeymoon in Chapter 19 of the <em>Life of George Eliot</em> at <a href="https://georgeeliotarchive.org/files/original/007b2faf17b90541c118ada5878ef40a.pdf" target="_blank"> Vol.3 of <em>Life</em> the Cabinet Edition</a>, pp. 346-362.&nbsp;</p><p><i>Click on the individual cities on this itinerary for more information.</it></p></h4>';
+          // add known info about event to the description
+          //alternatively, you can have a field called description in your json attributes - it will pull it in here on any layer you have an oneachfeature
+          // you must create a layer property on each feature or else
+          // the search results won't know where the item is on the map / layer
+          feature.layer = layer;
+          layer.bindPopup(popup, {
+            maxWidth: "300",
+          });
+        }
+      }; // end onEachFeature 1860
+
+      // all cities visited in one layer:
+      var onEachFeatureHoneymoon = function (feature, layer) {
+        if (feature.properties) {
+          var prop = feature.properties;
+          //   var popup = '<h3>'+prop['Location']+'</h3><strong>Total Visits: </strong>'+ prop['VisitTotal']+'<br>'+prop['Years']+'<br>'+prop['Info'];
+          feature.layer = layer;
+          layer.on("click", function (e) {
+            document.getElementById("info").innerHTML =
+              "<h3>" +
+              prop["Landmark"] +
+              "</h3><strong>Description: </strong>" +
+              "<br>" +
+              prop["Description"] +
+              "<br>" +
+              "<p>Click on image for more details.</p>";
+          });
+        }
+      };
+
+      var Honeymoonstyle = {
+        color: "#e41a1c",
+        weight: 4,
+        opacity: 0.8,
+      };
+
+      var EliotCircleMarkers = {
+        radius: 10,
+        fillColor: "#410e99",
+        color: "#410e99",
+        weight: 1,
+        opacity: 0.7,
+        fillOpacity: 0.5,
+      };
+
+      var tripHoneymoon = L.geoJson(EliotEngland, {
+        onEachFeature: onEachFeature1880,
+        style: Honeymoonstyle,
+      }).addTo(map);
+
+      var EliotCities = L.geoJson(EliotEnglandCities, {
+        onEachFeature: onEachFeatureHoneymoon,
+        pointToLayer: function (feature, latlng) {
+          return L.circleMarker(latlng, EliotCircleMarkers);
+        },
+      }).addTo(map);
+
+      //If I need polygons in here for particular detail spaces, here is the template:
+      // L.polygon ([
+      //  [ 43.7779433, 11.2594059 ],a
+      //  [ 43.7789155, 11.2601515 ],
+      //  [ 43.7792718, 11.25932  ],
+      //  [ 43.7782919, 11.2585744 ]
+      //  ]).addTo(map).bindPopup('<p>In 1860, Eliot and Lewes visited the <strong>Monastery of San Marco</strong> in Florence for the first time to see the famous frescoes by Fra Angelico on its walls. Eliot commented specifically on the <em>Crucifixion</em> in the Chapter House in her <a href="https://georgeeliotarchive.org/items/show/222">&quot;Recollections of Italy&quot; see p. 186 in Cross&#39;&nbsp;<em>Life</em>, Vol.2</a>. But in 1860 and 1861, she could not see the many frescoes on the upper floor, because women were not permitted beyond the public areas of the monastery. Nonetheless, with the help of notes taken by Lewes, it became a key location in her novel <em>Romola</em>, set in the 1490s. Romola barely notices the work with "a crucified form rising high and pale on the frescoed wall, and pale faces of sorrow looking out from it below." When she returned in 1869, the monastery had become a public museum, which Eliot visited on April 24 and 26, 1869.</p><p>Fra Angelico&#39;s
+      // <em>Crucifixion</em>, San Marco Chapter House<a href="https://georgeeliotarchive.org/files/original/7cd2de744d9d0e0b097de21f85250bd9.jpg" target="_blank"><img alt="An Image of Fra Angelico&#39;s Crucifixion in the Chapter House of San Marco" src="https://georgeeliotarchive.org/files/original/7cd2de744d9d0e0b097de21f85250bd9.jpg" style="width: 100%; height: 100%;" /></a></p>'
+      // );
+
+      var basemaps = {
+        Colorful: imagery,
+        Monochrome: canvas,
+      };
+
+      var overlaymaps = {
+        /*"<span style='color:red'>Itinerary 1880</span>": tripHoneymoon,
+            "All Cities Visited": EliotCities*/
+      };
+
+      L.control
+        .layers(basemaps, overlaymaps, {
+          collapsed: false,
+        })
+        .addTo(map);
+
+      var info = document.getElementById("info");
+      L.DomEvent.disableClickPropagation(info);
+      // Function to update the radius of circle markers
+      function updateCircleMarkerRadius() {
+        var currentZoom = map.getZoom();
+        // Adjust the radius based on the zoom level
+        var newRadius = currentZoom;
+        console.log(newRadius);
+        // Update the radius of each circle marker
+        EliotCities.eachLayer(function (layer) {
+          if (layer instanceof L.CircleMarker) {
+            layer.setRadius(newRadius);
+          }
+        });
+      }
+
+      // Add a zoomend event listener to the map
+      map.on("zoomend", function () {
+        updateCircleMarkerRadius();
+      });
+
+      // Initial update for the current zoom level
+      updateCircleMarkerRadius();
+    </script>
+  </body>
+</html>
